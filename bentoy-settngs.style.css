@@ -1,0 +1,111 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+#background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #fbe555, #5eb3f7);
+    z-index: -1;
+    transition: filter 0.3s ease;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+
+.icon-btn {
+    position: absolute;
+    top: 20px;
+    font-size: 2em;
+    cursor: pointer;
+}
+
+.home {
+    left: 20px;
+    color: black;
+    font-size: 50px;
+}
+
+.menu {
+    right: 20px;
+    color: black;
+    font-size: 50px;
+}
+
+
+.settings-box {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    width: 60%;
+    max-width: 650px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+h1 {
+    font-size: 60px;
+    font-family: Georgia, serif;
+    margin-bottom: 10px;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.controls div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.icon {
+    font-size: 2em;
+    margin-right: 10px;
+}
+
+input[type="range"] {
+    width: 60%;
+    cursor: pointer;
+}
+
+.buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.buttons button {
+     background-color: #003366;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 5px;
+    color: white;
+}
+
+.buttons button:hover {
+    background-color: #6a6a6a;
+}
+
+.home button:hover {
+    background: #d0ff00;
+    transform: translateX(6px);
+    
+}

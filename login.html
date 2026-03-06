@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GQuiz - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="gquiz-main.css">
+    <style>
+        
+        body {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        .login-wrap { width: 100%; max-width: 420px; padding: 20px; animation: popIn .4s ease; }
+        .login-logo { text-align: center; margin-bottom: 24px; }
+        .login-logo img { width: 150px; }
+        .form-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .form-sub   { font-size: 13px; opacity: .55; margin-bottom: 22px; }
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 12px; font-weight: 600; opacity: .6; margin-bottom: 5px; letter-spacing: .5px; }
+        .field input {
+            width: 100%; padding: 11px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px; color: #fff; font-size: 14px;
+            font-family: "Poppins", sans-serif; outline: none;
+            backdrop-filter: blur(10px); transition: border-color .2s;
+        }
+        .field input:focus { border-color: rgba(138,43,226,.7); }
+        .field input::placeholder { color: rgba(255,255,255,.35); }
+        .btn-full { width: 100%; justify-content: center; padding: 13px; font-size: 15px; margin-top: 4px; }
+        .switch-link { text-align: center; margin-top: 16px; font-size: 13px; opacity: .65; }
+        .switch-link span { color: #a78bfa; cursor: pointer; font-weight: 600; }
+        .switch-link span:hover { text-decoration: underline; }
+        .err-msg { color: #ff6b6b; font-size: 12px; margin-top: 6px; display: none; padding: 8px 12px; background: rgba(239,68,68,.12); border-radius: 8px; border: 1px solid rgba(239,68,68,.3); }
+    </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="login-wrap">
+    <div class="login-logo"><img src="gquiz-logo.png" alt="GQuiz"></div>
+
+    <div class="card" id="loginForm">
+        <div class="form-title">Welcome Back! </div>
+        <div class="form-sub">Login to continue your journey</div>
+        <div class="field"><label>USERNAME</label><input type="text" id="loginUser" placeholder="Enter username" autocomplete="username"></div>
+        <div class="field"><label>PASSWORD</label><input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password"></div>
+        <p class="err-msg" id="loginErr"></p>
+        <button class="btn btn-full" onclick="doLogin()"><i class="fas fa-right-to-bracket"></i> Login</button>
+        <div class="switch-link">No account? <span onclick="switchForm('register')">Register here</span></div>
+    </div>
+
+    <div class="card" id="registerForm" style="display:none;">
+        <div class="form-title">Create Account </div>
+        <div class="form-sub">Start your quiz adventure today</div>
+        <div class="field"><label>DISPLAY NAME</label><input type="text" id="regName" placeholder="Your name"></div>
+        <div class="field"><label>USERNAME</label><input type="text" id="regUser" placeholder="Choose a username" autocomplete="username"></div>
+        <div class="field"><label>PASSWORD</label><input type="password" id="regPass" placeholder="Choose a password" autocomplete="new-password"></div>
+        <p class="err-msg" id="regErr"></p>
+        <button class="btn btn-full" onclick="doRegister()"><i class="fas fa-user-plus"></i> Register</button>
+        <div class="switch-link">Have an account? <span onclick="switchForm('login')">Login here</span></div>
+    </div>
+</div>
+
+<script src="gquiz-state.js"></script>
+<script>
+    
+    if (GQ.isLoggedIn()) { window.location.href = 'homepage.html'; }
+
+    var activeForm = 'login'; 
+
+    function switchForm(which) {
+        activeForm = which;
+        document.getElementById('loginForm').style.display    = (which === 'login')    ? 'block' : 'none';
+        document.getElementById('registerForm').style.display = (which === 'register') ? 'block' : 'none';
+    }
+
+    function doLogin() {
+        var u   = document.getElementById('loginUser').value.trim();
+        var p   = document.getElementById('loginPass').value;
+        var err = document.getElementById('loginErr');
+        if (!u || !p) { showErr(err, 'Please fill in all fields.'); return; }
+        var res = GQ.login(u, p);
+        if (!res.ok) { showErr(err, res.msg); return; }
+        err.style.display = 'none';
+        document.body.classList.add('fade-out');
+        setTimeout(function() { window.location.href = 'homepage.html'; }, 350);
+    }
+
+    function doRegister() {
+        var name = document.getElementById('regName').value.trim();
+        var u    = document.getElementById('regUser').value.trim();
+        var p    = document.getElementById('regPass').value;
+        var err  = document.getElementById('regErr');
+        if (!name || !u || !p) { showErr(err, 'All fields are required.'); return; }
+        if (p.length < 3) { showErr(err, 'Password must be at least 3 characters.'); return; }
+        var res = GQ.register(u, p, name);
+        if (!res.ok) { showErr(err, res.msg); return; }
+        GQ.login(u, p);
+        document.body.classList.add('fade-out');
+        setTimeout(function() { window.location.href = 'homepage.html'; }, 350);
+    }
+
+    function showErr(el, msg) {
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            if (activeForm === 'login') doLogin();
+            else doRegister();
+        }
+    });
+</script>
+</body>
+</html>

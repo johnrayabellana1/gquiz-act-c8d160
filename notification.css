@@ -1,0 +1,26 @@
+body {
+  background: linear-gradient(to right, #1e1e3f, #6a11cb);
+  font-family: Arial;
+  text-align: center;
+  color: white;
+}
+
+.card {
+  background: #87b6e5;
+  width: 400px;
+  margin: 60px auto;
+  padding: 30px;
+  border-radius: 15px;
+}
+
+button {
+  padding: 10px 25px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.1);
+}

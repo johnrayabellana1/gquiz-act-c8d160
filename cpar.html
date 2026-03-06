@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Storage</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="cpar.css">
+</head>
+<body>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="modal-overlay" id="modal" onclick="closeModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()"><i class="fas fa-xmark"></i></button>
+            <p class="modal-title" id="mTitle"></p>
+            <div id="mBody"></div>
+            <a class="btn modal-dl" id="mDl" download><i class="fas fa-download"></i> Download</a>
+        </div>
+    </div>
+
+    <div class="back-button" onclick="goBack()"><i class="fas fa-arrow-left"></i></div>
+    <img src="gquiz-logo.png" alt="GQuiz Logo" class="page-logo">
+    <h1 class="page-title" id="pageTitle">File Storage</h1>
+    <div class="container" id="weekView"></div>
+
+    <div class="storage-view" id="storageView">
+        <div class="breadcrumb">
+            <span class="breadcrumb-link" onclick="backToWeeks()"><i class="fas fa-house"></i> File Storage</span>
+            <span style="opacity:.4"> / </span><span id="bcWeek"></span>
+        </div>
+        <div class="drop-zone" id="dropZone"
+            ondragover="event.preventDefault(); this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="onDrop(event)">
+            <i class="fas fa-cloud-arrow-up" style="font-size:30px; opacity:.5; display:block; margin-bottom:8px;"></i>
+            <p>Drag and drop files here, or <label for="fileInput" class="drop-browse">browse</label></p>
+            <p style="font-size:12px; opacity:.4; margin-top:4px;">PDF, PPTX, Images, Videos, Documents</p>
+            <input type="file" id="fileInput" multiple onchange="uploadFiles(this.files); this.value=''" style="display:none">
+        </div>
+        <div class="link-row">
+            <i class="fas fa-link" style="opacity:.4; flex-shrink:0"></i>
+            <input id="linkInput" class="link-input" placeholder="Paste a link and press Enter..."
+                onkeydown="if(event.key === 'Enter') addLink()">
+            <button class="btn" onclick="addLink()"><i class="fas fa-plus"></i> Add Link</button>
+        </div>
+        <div class="categories-grid" id="catsGrid"></div>
+    </div>
+
+<script>
+
+    var categories = [
+        { id: 'pdfs',   label: 'PDF Files',     icon: 'fa-file-pdf',        header: 'pdf-header',  type: 'pdf'   },
+        { id: 'pptx',   label: 'Presentations', icon: 'fa-file-powerpoint', header: 'pptx-header', type: 'pptx'  },
+        { id: 'images', label: 'Images',        icon: 'fa-image',           header: 'img-header',  type: 'image' },
+        { id: 'links',  label: 'Links',         icon: 'fa-link',            header: 'link-header', type: 'link'  },
+        { id: 'docs',   label: 'Documents',     icon: 'fa-file-word',       header: 'doc-header',  type: 'doc'   },
+        { id: 'videos', label: 'Videos',        icon: 'fa-file-video',      header: 'vid-header',  type: 'video' },
+    ];
+
+    var currentWeek = null;
+
+
+    var STORAGE_KEY = 'fileStorage_21stLiterature';
+
+    
+    function loadFromStorage() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            return JSON.parse(saved);
+        }
+ 
+        var fresh = {};
+        for (var i = 1; i <= 8; i++) {
+            fresh[i] = { pdfs: [], pptx: [], images: [], links: [], docs: [], videos: [] };
+        }
+        return fresh;
+    }
+
+    
+    function saveToStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+    }
+
+    var storage = loadFromStorage();
+
+   
+    var weekHTML = '';
+    for (var w = 1; w <= 8; w++) {
+        weekHTML += '<div class="week-card" onclick="openWeek(' + w + ')">';
+        weekHTML += '    <div class="week-icon"><i class="fas fa-folder-open"></i></div>';
+        weekHTML += '    <span class="week-label">Week ' + w + '</span>';
+        weekHTML += '    <span class="week-count" id="c' + w + '">0 files</span>';
+        weekHTML += '</div>';
+    }
+    document.getElementById('weekView').innerHTML = weekHTML;
+
+    
+    var catsHTML = '';
+    for (var c = 0; c < categories.length; c++) {
+        var cat = categories[c];
+        catsHTML += '<div class="category-card">';
+        catsHTML += '    <div class="category-header ' + cat.header + '">';
+        catsHTML += '        <i class="fas ' + cat.icon + '"></i> ' + cat.label;
+        catsHTML += '        <span class="cat-count" id="cnt-' + cat.id + '">0</span>';
+        catsHTML += '    </div>';
+        catsHTML += '    <div class="file-list' + (cat.type === 'image' ? ' img-grid' : '') + '" id="list-' + cat.id + '">';
+        catsHTML += '        <p class="empty-msg"><i class="fas fa-inbox"></i><br>Nothing here yet</p>';
+        catsHTML += '    </div>';
+        catsHTML += '</div>';
+    }
+    document.getElementById('catsGrid').innerHTML = catsHTML;
+
+
+    updateWeekCounts();
+
+
+  
+    function openWeek(weekNumber) {
+        currentWeek = weekNumber;
+        document.getElementById('pageTitle').textContent = 'Week ' + weekNumber + ' - Files';
+        document.getElementById('bcWeek').textContent = 'Week ' + weekNumber;
+        document.getElementById('weekView').style.display = 'none';
+
+        var storageView = document.getElementById('storageView');
+        storageView.style.display = 'flex';
+        storageView.classList.remove('fade-in');
+        void storageView.offsetWidth;
+        storageView.classList.add('fade-in');
+
+        showFiles();
+    }
+
+    function backToWeeks() {
+        currentWeek = null;
+        document.getElementById('weekView').style.display = 'flex';
+        document.getElementById('storageView').style.display = 'none';
+        document.getElementById('pageTitle').textContent = 'File Storage';
+        updateWeekCounts();
+    }
+
+
+    function goBack() {
+        if (currentWeek !== null) {
+            backToWeeks();
+        } else {
+            document.body.classList.add('fade-out');
+            setTimeout(function() { history.back(); }, 400);
+        }
+    }
+
+    function updateWeekCounts() {
+        for (var i = 1; i <= 8; i++) {
+            var week = storage[i];
+            var total = week.pdfs.length + week.pptx.length + week.images.length +
+                        week.links.length + week.docs.length + week.videos.length;
+            var label = total === 0 ? '0 files' : total + (total === 1 ? ' file' : ' files');
+            document.getElementById('c' + i).textContent = label;
+        }
+    }
+
+   
+    function onDrop(event) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-over');
+        uploadFiles(event.dataTransfer.files);
+    }
+
+    
+    function uploadFiles(files) {
+        if (files.length === 0) return;
+
+        var total = files.length;
+        var done = 0;
+
+        for (var i = 0; i < files.length; i++) {
+            readFile(files[i], function() {
+                done++;
+                if (done === total) {
+                    saveToStorage();
+                    showFiles();
+                    showToast('Saved ' + total + ' file' + (total === 1 ? '' : 's') + ' to Week ' + currentWeek);
+                }
+            });
+        }
+    }
+
+    
+    function readFile(file, callback) {
+        var ext = file.name.split('.').pop().toLowerCase();
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            var entry = {
+                name: file.name,
+                url:  e.target.result,   
+                size: getFileSize(file.size)
+            };
+
+            if (ext === 'pdf') {
+                storage[currentWeek].pdfs.push(entry);
+            } else if (ext === 'ppt' || ext === 'pptx') {
+                storage[currentWeek].pptx.push(entry);
+            } else if (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'gif' || ext === 'webp' || ext === 'svg') {
+                storage[currentWeek].images.push(entry);
+            } else if (ext === 'mp4' || ext === 'mov' || ext === 'avi' || ext === 'mkv' || ext === 'webm') {
+                storage[currentWeek].videos.push(entry);
+            } else {
+                storage[currentWeek].docs.push(entry);
+            }
+
+            callback();
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    
+    function addLink() {
+        var input = document.getElementById('linkInput');
+        var url = input.value.trim();
+
+        if (!url) { showToast('Paste a link first!', true); return; }
+        if (!url.startsWith('http')) url = 'https://' + url;
+
+        var name = url.replace(/^https?:\/\//, '').split('/')[0];
+        storage[currentWeek].links.push({ name: name, url: url, size: '-' });
+        input.value = '';
+        saveToStorage();
+        showFiles();
+        showToast('Link saved');
+    }
+
+
+    function showFiles() {
+        for (var c = 0; c < categories.length; c++) {
+            var cat = categories[c];
+            var items = storage[currentWeek][cat.id];
+            var listEl = document.getElementById('list-' + cat.id);
+            var countEl = document.getElementById('cnt-' + cat.id);
+
+            countEl.textContent = items.length;
+
+            if (items.length === 0) {
+                listEl.innerHTML = '<p class="empty-msg"><i class="fas fa-inbox"></i><br>Nothing here yet</p>';
+                continue;
+            }
+
+            
+            if (cat.type === 'image') {
+                var imgHTML = '';
+                for (var i = 0; i < items.length; i++) {
+                    var f = items[i];
+                    imgHTML += '<div class="img-thumb">';
+                    imgHTML += '    <img src="' + f.url + '" onclick="previewFile(\'image\',' + i + ')" title="' + f.name + '">';
+                    imgHTML += '    <div class="img-actions">';
+                    imgHTML += '        <a class="ab dl" href="' + f.url + '" download="' + f.name + '"><i class="fas fa-download"></i></a>';
+                    imgHTML += '        <button class="ab del" onclick="deleteFile(\'images\',' + i + ')"><i class="fas fa-trash"></i></button>';
+                    imgHTML += '    </div>';
+                    imgHTML += '    <span class="img-name">' + shortenText(f.name, 13) + '</span>';
+                    imgHTML += '</div>';
+                }
+                listEl.innerHTML = imgHTML;
+                continue;
+            }
+
+            var listHTML = '';
+            for (var j = 0; j < items.length; j++) {
+                var file = items[j];
+                listHTML += '<div class="file-item">';
+                listHTML += '    <i class="fas ' + cat.icon + ' file-icon"></i>';
+                listHTML += '    <div class="file-info">';
+                listHTML += '        <span class="fname" title="' + file.name + '">' + shortenText(file.name, 26) + '</span>';
+                listHTML += '        <span class="fsize">' + (cat.type === 'link' ? shortenText(file.url, 34) : file.size) + '</span>';
+                listHTML += '    </div>';
+                listHTML += '    <div class="fbtns">';
+                if (cat.type === 'link') {
+                    listHTML += '<a class="ab ext" href="' + file.url + '" target="_blank"><i class="fas fa-arrow-up-right-from-square"></i></a>';
+                } else {
+                    listHTML += '<button class="ab pv" onclick="previewFile(\'' + cat.type + '\',' + j + ')"><i class="fas fa-eye"></i></button>';
+                    listHTML += '<a class="ab dl" href="' + file.url + '" download="' + file.name + '"><i class="fas fa-download"></i></a>';
+                }
+                listHTML += '        <button class="ab del" onclick="deleteFile(\'' + cat.id + '\',' + j + ')"><i class="fas fa-trash"></i></button>';
+                listHTML += '    </div>';
+                listHTML += '</div>';
+            }
+            listEl.innerHTML = listHTML;
+        }
+
+        updateWeekCounts();
+    }
+
+    function previewFile(type, index) {
+        var keyMap = { pdf: 'pdfs', pptx: 'pptx', image: 'images', doc: 'docs', video: 'videos' };
+        var file = storage[currentWeek][keyMap[type]][index];
+        if (!file) return;
+
+        document.getElementById('mTitle').textContent = file.name;
+        var dl = document.getElementById('mDl');
+        dl.href = file.url;
+        dl.download = file.name;
+
+        var body = document.getElementById('mBody');
+        if (type === 'image') {
+            body.innerHTML = '<img src="' + file.url + '" style="max-width:100%; max-height:60vh; border-radius:10px;">';
+        } else if (type === 'pdf') {
+            body.innerHTML = '<iframe src="' + file.url + '" style="width:100%; height:60vh; border:none; border-radius:10px;"></iframe>';
+        } else if (type === 'video') {
+            body.innerHTML = '<video controls style="width:100%; border-radius:10px;"><source src="' + file.url + '"></video>';
+        } else {
+            body.innerHTML = '<div style="text-align:center; padding:40px; opacity:.45;"><i class="fas fa-file" style="font-size:52px; display:block; margin-bottom:10px;"></i>No preview - download to open.</div>';
+        }
+
+        document.getElementById('modal').classList.add('open');
+    }
+
+    // Close the preview popup
+    function closeModal() {
+        document.getElementById('modal').classList.remove('open');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    // Remove a file from the list
+    function deleteFile(categoryId, index) {
+        var name = storage[currentWeek][categoryId][index].name || 'File';
+        storage[currentWeek][categoryId].splice(index, 1);
+        saveToStorage();
+        showFiles();
+        showToast('Removed "' + shortenText(name, 20) + '"', true);
+    }
+
+    function showToast(message, isWarning) {
+        var t = document.getElementById('toast');
+        t.textContent = message;
+        t.className = 'toast show' + (isWarning ? ' warn' : '');
+        setTimeout(function() { t.className = 'toast'; }, 2800);
+    }
+
+    function getFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function shortenText(text, maxLength) {
+        return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+    }
+
+</script>
+</body>
+</html>

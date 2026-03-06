@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GQuiz - Leaderboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="gquiz-main.css">
+    <style>
+        .podium { display: flex; justify-content: center; align-items: flex-end; gap: 16px; margin: 20px 0 30px; animation: riseUp .4s ease .1s both; }
+        .pod-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .pod-avatar { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.07); border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .pod-name { font-size: 12px; font-weight: 600; text-align: center; }
+        .pod-xp { font-size: 11px; opacity: .5; }
+        .pod-base { border-radius: 10px 10px 0 0; width: 70px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; }
+        .pod-1 .pod-base { height: 70px; background: rgba(234,179,8,.4); border: 1px solid rgba(234,179,8,.5); }
+        .pod-2 .pod-base { height: 50px; background: rgba(156,163,175,.3); border: 1px solid rgba(156,163,175,.4); }
+        .pod-3 .pod-base { height: 36px; background: rgba(180,100,50,.3); border: 1px solid rgba(180,100,50,.4); }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="logo"><img src="gquiz-logo.png" alt="GQuiz"></div>
+    <ul class="menu">
+        <a href="homepage.html"><li title="Home"><i class="fas fa-house"></i></li></a>
+        <a href="game.html"><li title="Play"><i class="fas fa-gamepad"></i></li></a>
+        <a href="leaderboard.html"><li class="active" title="Leaderboard"><i class="fas fa-trophy"></i></li></a>
+        <a href="shop.html"><li title="Shop"><i class="fas fa-cart-shopping"></i></li></a>
+        <a href="profile.html"><li title="Profile"><i class="fas fa-user"></i></li></a>
+        <a href="notifications.html"><li title="Notifications"><i class="fas fa-bell"></i></li></a>
+        <a href="settings.html"><li title="Settings"><i class="fas fa-gear"></i></li></a>
+    </ul>
+</div>
+<div class="main">
+    <div class="page-heading">🏆 Leaderboard</div>
+    <div class="podium" id="podium"></div>
+    <div id="lbList" style="animation: riseUp .4s ease .2s both;"></div>
+</div>
+<script src="gquiz-state.js"></script>
+<script>
+    if (!GQ.requireLogin()) {}
+    var u   = GQ.currentUser();
+    var lb  = GQ.getLeaderboard();
+
+    
+    var pod = document.getElementById('podium');
+    var podOrder = [1, 0, 2]; 
+    var podClasses = ['pod-2','pod-1','pod-3'];
+    var podEmojis = ['🥈','🥇','🥉'];
+    podOrder.forEach(function(idx, i) {
+        if (!lb[idx]) return;
+        var isMe = lb[idx].u === u.username;
+        pod.innerHTML += '<div class="pod-item ' + podClasses[i] + '">' +
+            '<div class="pod-avatar">' + (isMe ? '😊' : '👤') + '</div>' +
+            '<div class="pod-name">' + lb[idx].name + (isMe ? ' (You)' : '') + '</div>' +
+            '<div class="pod-xp">✨ ' + lb[idx].xp + ' XP</div>' +
+            '<div class="pod-base">' + podEmojis[i] + '</div></div>';
+    });
+
+    var list = document.getElementById('lbList');
+    if (lb.length === 0) {
+        list.innerHTML = '<div class="card" style="text-align:center;opacity:.5;">No players yet. Be the first!</div>';
+    } else {
+        lb.forEach(function(entry, i) {
+            var isMe = entry.u === u.username;
+            var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1);
+            list.innerHTML += '<div class="lb-row' + (isMe ? ' me' : '') + '">' +
+                '<div class="lb-rank">' + medal + '</div>' +
+                '<div class="lb-name">' + entry.name + (isMe ? ' <span style="font-size:10px;opacity:.5">(You)</span>' : '') + '</div>' +
+                '<div class="lb-xp">✨ ' + entry.xp + ' XP</div></div>';
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GQuiz - Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="gquiz-main.css">
+    <style>
+        #diffView, #levelView, #quizView { display: none; }
+
+        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+
+        .diff-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .diff-card {
+            padding: 28px 16px; border-radius: 18px; text-align: center; cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(20px); transition: transform .25s, box-shadow .25s;
+        }
+        .diff-card:hover:not(.locked) { transform: translateY(-4px) scale(1.03); box-shadow: 0 10px 26px rgba(0,0,0,.3); }
+        .diff-card.locked { opacity: .38; cursor: not-allowed; }
+        .diff-icon     { font-size: 38px; margin-bottom: 10px; }
+        .diff-name     { font-size: 16px; font-weight: 700; }
+        .diff-sub      { font-size: 12px; opacity: .5; margin-top: 4px; }
+        .diff-prog-txt { font-size: 12px; opacity: .65; margin-top: 8px; font-weight: 600; }
+        .diff-easy    { border-color: rgba(34,197,94,.45);  background: rgba(34,197,94,.09);  }
+        .diff-medium  { border-color: rgba(234,179,8,.45);  background: rgba(234,179,8,.09);  }
+        .diff-hard    { border-color: rgba(239,68,68,.45);  background: rgba(239,68,68,.09);  }
+        .diff-extreme { border-color: rgba(138,43,226,.45); background: rgba(138,43,226,.09); }
+
+        .levels-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        .lv-btn {
+            padding: 20px 0; border-radius: 14px; text-align: center; cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(20px); font-size: 15px; font-weight: 700; color: #fff;
+            transition: background .2s, transform .2s, border-color .2s;
+        }
+        .lv-btn:hover:not(.locked) { background: rgba(255,255,255,.18); transform: scale(1.06); border-color: rgba(255,255,255,.4); }
+        .lv-btn.locked { opacity: .32; cursor: not-allowed; }
+        .lv-btn.done   { border-color: rgba(34,197,94,.55); background: rgba(34,197,94,.12); }
+        .lv-stars      { font-size: 10px; margin-top: 5px; opacity: .85; }
+
+        .quiz-header   { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+        .quiz-meta     { font-size: 12px; opacity: .55; white-space: nowrap; }
+        .quiz-progress { flex: 1; }
+        .timer-ring    { font-size: 22px; font-weight: 800; color: #a78bfa; min-width: 52px; text-align: center; }
+        .timer-ring.urgent { color: #f87171; animation: pulse .5s ease infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.15); } }
+
+        .question-card {
+            background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.18);
+            border-radius: 20px; backdrop-filter: blur(20px); padding: 28px; margin-bottom: 18px;
+        }
+        .q-number      { font-size: 12px; font-weight: 700; opacity: .45; letter-spacing: 1px; margin-bottom: 10px; }
+        .question-text { font-size: 18px; font-weight: 600; line-height: 1.6; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .opt-btn {
+            padding: 15px 18px; border-radius: 14px; border: 2px solid rgba(255,255,255,.18);
+            background: rgba(255,255,255,.07); backdrop-filter: blur(20px); color: #fff;
+            font-size: 14px; font-weight: 500; font-family: "Poppins", sans-serif;
+            cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;
+            transition: background .15s, border-color .15s, transform .1s; width: 100%;
+        }
+        .opt-btn:hover:not(:disabled) { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.4); transform: scale(1.02); }
+        .opt-label {
+            width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.12);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; flex-shrink: 0;
+        }
+        .opt-btn.correct { background: rgba(34,197,94,.25) !important; border-color: rgba(34,197,94,.7) !important; }
+        .opt-btn.wrong   { background: rgba(239,68,68,.25) !important;  border-color: rgba(239,68,68,.7)  !important; }
+        .opt-btn.correct .opt-label { background: rgba(34,197,94,.5); }
+        .opt-btn.wrong   .opt-label { background: rgba(239,68,68,.5); }
+
+        .result-stars   { font-size: 42px; text-align: center; letter-spacing: 6px; margin: 8px 0; }
+        .result-rewards { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+        .reward-chip {
+            background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.2);
+            border-radius: 40px; padding: 8px 18px; font-size: 13px; font-weight: 600; backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="resultModal">
+    <div class="modal-box">
+        <h2 style="text-align:center;font-size:21px;font-weight:800;" id="resultTitle"></h2>
+        <div class="result-stars" id="resultStars"></div>
+        <p style="text-align:center;font-size:15px;opacity:.8;" id="resultScore"></p>
+        <div class="result-rewards" id="resultRewards"></div>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;" onclick="retryQuiz()"><i class="fas fa-rotate-right"></i> Retry</button>
+            <button class="btn" style="flex:1;justify-content:center;" onclick="nextLevel()"><i class="fas fa-forward"></i> Next Level</button>
+        </div>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;" onclick="goPage('homepage.html')"><i class="fas fa-house"></i> Back to Home</button>
+    </div>
+</div>
+
+<div class="sidebar">
+    <div class="logo"><img src="gquiz-logo.png" alt="GQuiz"></div>
+    <ul class="menu">
+        <a href="homepage.html"><li title="Home"><i class="fas fa-house"></i></li></a>
+        <a href="game.html"><li class="active" title="Play"><i class="fas fa-gamepad"></i></li></a>
+        <a href="leaderboard.html"><li title="Leaderboard"><i class="fas fa-trophy"></i></li></a>
+        <a href="shop.html"><li title="Shop"><i class="fas fa-cart-shopping"></i></li></a>
+        <a href="profile.html"><li title="Profile"><i class="fas fa-user"></i></li></a>
+        <a href="notifications.html"><li title="Notifications"><i class="fas fa-bell"></i></li></a>
+        <a href="settings.html"><li title="Settings"><i class="fas fa-gear"></i></li></a>
+    </ul>
+</div>
+
+<div class="main">
+    <div class="topbar">
+        <div class="coin-display" style="position:static;">🪙 <span id="coinCount">0</span></div>
+        <div class="coin-display" style="position:static;margin-left:8px;">✨ XP: <span id="xpCount">0</span></div>
+        <a href="profile.html" class="profile-btn"><i class="fas fa-user"></i></a>
+    </div>
+
+    <div id="subjectView">
+        <div class="page-heading">🎮 Choose a Subject</div>
+        <div class="subjects-grid" id="subjectGrid"></div>
+    </div>
+
+    <div id="diffView">
+        <div class="back-row" onclick="showSubjects()"><i class="fas fa-arrow-left"></i> Back to Subjects</div>
+        <div class="page-heading" id="diffHeading">Select Difficulty</div>
+        <div class="diff-grid" id="diffGrid"></div>
+    </div>
+
+    <div id="levelView">
+        <div class="back-row" onclick="showDiffs()"><i class="fas fa-arrow-left"></i> Back to Difficulties</div>
+        <div class="page-heading" id="levelHeading">Select Level</div>
+        <p style="font-size:13px;opacity:.5;margin-bottom:18px;" id="levelNote"></p>
+        <div class="levels-grid" id="levelsGrid"></div>
+    </div>
+
+    <div id="quizView">
+        <div class="back-row" onclick="exitQuiz()"><i class="fas fa-arrow-left"></i> Exit Quiz</div>
+        <div class="quiz-header">
+            <div class="quiz-meta" id="qMeta"></div>
+            <div class="quiz-progress">
+                <div class="prog-bar-wrap"><div class="prog-bar-fill" id="qProg" style="width:0%"></div></div>
+            </div>
+            <div class="timer-ring" id="timerDisp">⏱ —</div>
+        </div>
+        <div class="question-card">
+            <div class="q-number" id="qNumber">QUESTION 1 OF 5</div>
+            <div class="question-text" id="qText"></div>
+        </div>
+        <div class="options-grid" id="qOptions"></div>
+    </div>
+</div>
+
+<script src="gquiz-state.js"></script>
+<script src="gquiz-data.js"></script>
+<script>
+
+    if (!GQ.isLoggedIn()) { window.location.href = 'login.html'; }
+
+    var SUBJECTS = [
+        { key: 'English',            label: 'English',            icon: '📖' },
+        { key: 'Filipino',           label: 'Filipino',           icon: '🇵🇭' },
+        { key: 'Science',            label: 'Science',            icon: '🔬' },
+        { key: 'Araling Panlipunan', label: 'Araling Panlipunan', icon: '🗺️' },
+        { key: 'Math',               label: 'Math',               icon: '📐' },
+    ];
+    var DIFFICULTIES = [
+        { key: 'Easy',    icon: '🌱', cls: 'diff-easy',    time: 25 },
+        { key: 'Medium',  icon: '🔥', cls: 'diff-medium',  time: 20 },
+        { key: 'Hard',    icon: '💀', cls: 'diff-hard',    time: 15 },
+        { key: 'Extreme', icon: '👑', cls: 'diff-extreme', time: 10 },
+    ];
+    var LABELS = ['A','B','C','D'];
+
+    var selSubject = null, selDiff = null, selLevel = null;
+    var questions  = [], qIndex = 0, score = 0;
+    var timerVal   = 20, timerInt = null, answered = false;
+
+    function refreshTopbar() {
+        var u = GQ.currentUser();
+        if (!u) return;
+        document.getElementById('coinCount').textContent = u.coins;
+        document.getElementById('xpCount').textContent   = u.xp;
+    }
+    refreshTopbar();
+
+    function show(id) {
+        var views = ['subjectView','diffView','levelView','quizView'];
+        for (var i = 0; i < views.length; i++) {
+            document.getElementById(views[i]).style.display = (views[i] === id) ? '' : 'none';
+        }
+    }
+
+    function showSubjects() {
+        clearInterval(timerInt);
+        selSubject = null; selDiff = null; selLevel = null;
+        buildSubjects();
+        show('subjectView');
+    }
+
+    function showDiffs() {
+        clearInterval(timerInt);
+        if (!selSubject) { showSubjects(); return; }
+        buildDiffs();
+        show('diffView');
+    }
+
+    function showLevels() {
+        if (!selSubject || !selDiff) { showDiffs(); return; }
+        buildLevels();
+        show('levelView');
+    }
+
+    function exitQuiz() {
+        clearInterval(timerInt);
+        showLevels();
+    }
+
+    function buildSubjects() {
+        var grid = document.getElementById('subjectGrid');
+        grid.innerHTML = '';
+        SUBJECTS.forEach(function(s) {
+            var done = 0;
+            DIFFICULTIES.forEach(function(d) {
+                for (var l = 1; l <= 5; l++) {
+                    var p = GQ.getProgress(s.key, d.key, l);
+                    if (p && p.completed) done++;
+                }
+            });
+            var el = document.createElement('div');
+            el.className = 'subj-card';
+            el.innerHTML =
+                '<div class="subj-icon">' + s.icon + '</div>' +
+                '<div class="subj-name">' + s.label + '</div>' +
+                '<div class="subj-sub">4 difficulties · 5 levels</div>' +
+                '<div class="subj-sub">' + done + ' / 20 done</div>';
+            el.onclick = (function(sk) {
+                return function() { selSubject = sk; showDiffs(); };
+            })(s.key);
+            grid.appendChild(el);
+        });
+    }
+    buildSubjects();
+
+    function buildDiffs() {
+        var s = null;
+        for (var i = 0; i < SUBJECTS.length; i++) { if (SUBJECTS[i].key === selSubject) { s = SUBJECTS[i]; break; } }
+        document.getElementById('diffHeading').textContent = s.icon + ' ' + s.label + '  —  Select Difficulty';
+        var grid = document.getElementById('diffGrid');
+        grid.innerHTML = '';
+        DIFFICULTIES.forEach(function(d) {
+            var unlocked = GQ.isDifficultyUnlocked(selSubject, d.key);
+            var done = 0;
+            for (var l = 1; l <= 5; l++) {
+                var p = GQ.getProgress(selSubject, d.key, l);
+                if (p && p.completed) done++;
+            }
+            var el = document.createElement('div');
+            el.className = 'diff-card ' + d.cls + (unlocked ? '' : ' locked');
+            el.innerHTML =
+                '<div class="diff-icon">' + d.icon + (unlocked ? '' : ' 🔒') + '</div>' +
+                '<div class="diff-name">' + d.key + '</div>' +
+                '<div class="diff-sub">⏱ ' + d.time + 's per question · 5 levels</div>' +
+                '<div class="diff-prog-txt">' + done + ' / 5 completed</div>';
+            if (unlocked) {
+                el.onclick = (function(dk) {
+                    return function() { selDiff = dk; showLevels(); };
+                })(d.key);
+            }
+            grid.appendChild(el);
+        });
+    }
+
+    function buildLevels() {
+        var s = null, d = null;
+        for (var i = 0; i < SUBJECTS.length; i++)    { if (SUBJECTS[i].key === selSubject) { s = SUBJECTS[i]; break; } }
+        for (var j = 0; j < DIFFICULTIES.length; j++) { if (DIFFICULTIES[j].key === selDiff) { d = DIFFICULTIES[j]; break; } }
+        document.getElementById('levelHeading').textContent =
+            s.icon + ' ' + s.label + '  ·  ' + d.icon + ' ' + selDiff + '  —  Select Level';
+        document.getElementById('levelNote').textContent =
+            '5 questions per level  ·  ' + d.time + 's per question  ·  Complete a level to unlock the next';
+        var grid = document.getElementById('levelsGrid');
+        grid.innerHTML = '';
+        for (var l = 1; l <= 5; l++) {
+            var unlocked = GQ.isLevelUnlocked(selSubject, selDiff, l);
+            var p = GQ.getProgress(selSubject, selDiff, l);
+            var el = document.createElement('div');
+            el.className = 'lv-btn' + (p && p.completed ? ' done' : '') + (unlocked ? '' : ' locked');
+            var starsHtml = '';
+            if (p && p.completed) {
+                for (var st = 0; st < p.stars; st++) starsHtml += '⭐';
+            }
+            el.innerHTML = 'Level ' + l +
+                (starsHtml ? '<div class="lv-stars">' + starsHtml + '</div>' : '') +
+                (!unlocked ? '<div class="lv-stars">🔒</div>' : '');
+            if (unlocked) {
+                el.onclick = (function(lk) {
+                    return function() { selLevel = lk; startQuiz(); };
+                })(l);
+            }
+            grid.appendChild(el);
+        }
+    }
+
+    function startQuiz() {
+
+        if (!QUIZ_DATA[selSubject] || !QUIZ_DATA[selSubject][selDiff] || !QUIZ_DATA[selSubject][selDiff][selLevel]) {
+            toast('⚠️ No questions found for this level.', 'warn');
+            return;
+        }
+        questions = QUIZ_DATA[selSubject][selDiff][selLevel].slice(0, 5);
+        qIndex = 0;
+        score  = 0;
+        show('quizView');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (qIndex >= questions.length) { endQuiz(); return; }
+        answered = false;
+        var q = questions[qIndex];
+        var d = null;
+        for (var i = 0; i < DIFFICULTIES.length; i++) { if (DIFFICULTIES[i].key === selDiff) { d = DIFFICULTIES[i]; break; } }
+        timerVal = d ? d.time : 20;
+
+        document.getElementById('qProg').style.width    = ((qIndex / questions.length) * 100) + '%';
+        document.getElementById('qMeta').textContent    = selSubject + '  ·  ' + selDiff + '  ·  Level ' + selLevel;
+        document.getElementById('qNumber').textContent  = 'QUESTION ' + (qIndex + 1) + ' OF ' + questions.length;
+        document.getElementById('qText').textContent    = q.q;
+
+        var opts = document.getElementById('qOptions');
+        opts.innerHTML = '';
+        for (var oi = 0; oi < q.options.length; oi++) {
+            var opt = q.options[oi];
+            var btn = document.createElement('button');
+            btn.className = 'opt-btn';
+           
+            btn.setAttribute('data-value', opt);
+            btn.innerHTML = '<span class="opt-label">' + LABELS[oi] + '</span>' + opt;
+            btn.onclick = (function(o, b) {
+                return function() { answer(b, o, q.answer); };
+            })(opt, btn);
+            opts.appendChild(btn);
+        }
+
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timerInt);
+        var el = document.getElementById('timerDisp');
+        el.className   = 'timer-ring';
+        el.textContent = '⏱ ' + timerVal;
+        timerInt = setInterval(function() {
+            timerVal--;
+            el.textContent = '⏱ ' + timerVal;
+            if (timerVal <= 5) el.className = 'timer-ring urgent';
+            if (timerVal <= 0) { clearInterval(timerInt); if (!answered) timeOut(); }
+        }, 1000);
+    }
+
+    function timeOut() {
+        answered = true;
+        var correctAns = questions[qIndex].answer;
+   
+        var allBtns = document.querySelectorAll('.opt-btn');
+        for (var i = 0; i < allBtns.length; i++) {
+            allBtns[i].disabled = true;
+            if (allBtns[i].getAttribute('data-value') === correctAns) {
+                allBtns[i].classList.add('correct');
+            }
+        }
+        toast('⏰ Time\'s up!', 'warn');
+        setTimeout(function() { qIndex++; loadQuestion(); }, 1400);
+    }
+
+    function answer(btn, opt, correct) {
+        if (answered) return;
+        answered = true;
+        clearInterval(timerInt);
+
+        var allBtns = document.querySelectorAll('.opt-btn');
+        for (var i = 0; i < allBtns.length; i++) { allBtns[i].disabled = true; }
+
+        if (opt === correct) {
+            btn.classList.add('correct');
+            score++;
+            toast('✅ Correct!', 'success');
+        } else {
+            btn.classList.add('wrong');
+
+            for (var j = 0; j < allBtns.length; j++) {
+                if (allBtns[j].getAttribute('data-value') === correct) {
+                    allBtns[j].classList.add('correct');
+                    break;
+                }
+            }
+            toast('❌ Wrong!', 'warn');
+        }
+        setTimeout(function() { qIndex++; loadQuestion(); }, 1100);
+    }
+
+    function endQuiz() {
+        clearInterval(timerInt);
+        document.getElementById('qProg').style.width = '100%';
+
+        var result = GQ.saveQuizResult(selSubject, selDiff, selLevel, score, questions.length);
+        if (!result) { toast('⚠️ Could not save result.', 'warn'); return; }
+        refreshTopbar();
+
+        var titles = ['😔 Try Again…', '👍 Good Try!', '🌟 Well Done!', '🎉 Perfect Score!'];
+        var starsStr = '', emptyStr = '';
+        for (var i = 0; i < result.stars; i++) starsStr += '⭐';
+        for (var j = 0; j < 3 - result.stars; j++) emptyStr += '☆';
+
+        document.getElementById('resultTitle').textContent  = titles[Math.min(result.stars, 3)];
+        document.getElementById('resultStars').textContent  = starsStr + emptyStr;
+        document.getElementById('resultScore').textContent  = score + ' / ' + questions.length + ' correct';
+        document.getElementById('resultRewards').innerHTML  =
+            '<div class="reward-chip">🪙 +' + result.coins + ' Coins</div>' +
+            '<div class="reward-chip">✨ +' + result.xp + ' XP</div>' +
+            (result.isFirst ? '<div class="reward-chip">🎁 First Clear Bonus!</div>' : '');
+
+        document.getElementById('resultModal').classList.add('open');
+    }
+
+    function retryQuiz() {
+        document.getElementById('resultModal').classList.remove('open');
+        startQuiz();
+    }
+
+    function nextLevel() {
+        document.getElementById('resultModal').classList.remove('open');
+        if (selLevel < 5) {
+            selLevel++;
+            startQuiz();
+        } else {
+            toast('🏆 All levels done! Try the next difficulty.');
+            showDiffs();
+        }
+    }
+
+    (function() {
+        var ss = sessionStorage.getItem('gq_subject');
+        if (ss) {
+            sessionStorage.removeItem('gq_subject');
+            selSubject = ss;
+            var sd = sessionStorage.getItem('gq_diff');
+            var sl = sessionStorage.getItem('gq_level');
+            sessionStorage.removeItem('gq_diff');
+            sessionStorage.removeItem('gq_level');
+            if (sd && sl) {
+                selDiff  = sd;
+                selLevel = parseInt(sl, 10);
+                showLevels();
+            } else {
+                showDiffs();
+            }
+        }
+    })();
+
+    function goPage(url) {
+        clearInterval(timerInt);
+        document.body.classList.add('fade-out');
+        setTimeout(function() { window.location.href = url; }, 300);
+    }
+
+    function toast(msg, type) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className   = 'toast show' + (type ? ' ' + type : '');
+        clearTimeout(t._tid);
+        t._tid = setTimeout(function() { t.className = 'toast'; }, 2000);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUMSS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="Johnray-GeneralInventory.css">
+</head>
+<body>
+
+    <div class="back-button" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i>
+    </div>
+
+    <h1 class="page-title">General Inventory</h1>
+
+    <main class="container">
+
+        <section class="grade">
+            <div class="grade-box">11TH<br><span>GRADE</span></div>
+            <button class="semester" onclick="goTo('General-Inventory-Strand1.html')">1st Semester</button>
+            <button class="semester" onclick="goTo('General-Inventory-Strand2.html')">2nd Semester</button>
+        </section>
+
+        <section class="grade">
+            <div class="grade-box">12TH<br><span>GRADE</span></div>
+            <button class="semester" onclick="goTo('General-Inventory-Strand3.html')">1st Semester</button>
+            <button class="semester" onclick="goTo('General-Inventory-Strand4.html')">2nd Semester</button>
+        </section>
+
+    </main>
+
+    <script>
+        function goTo(href) {
+            document.body.classList.add("fade-out");
+            setTimeout(() => {
+                window.location.href = href;
+            }, 400);
+        }
+
+        function goBack() {
+            document.body.classList.add("fade-out");
+            setTimeout(() => {
+                window.history.back();
+            }, 400);
+        }
+    </script>
+
+</body>
+</html>

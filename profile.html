@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GQuiz - Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="gquiz-main.css">
+    <style>
+        .profile-hero { background: linear-gradient(135deg,rgba(138,43,226,.4),rgba(59,130,246,.3)); border: 1px solid rgba(138,43,226,.4); border-radius: 22px; padding: 28px; display: flex; align-items: center; gap: 24px; margin-bottom: 24px; animation: riseUp .4s ease .1s both; flex-wrap: wrap; }
+        .avatar-circle { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,.15); border: 3px solid rgba(255,255,255,.3); display: flex; align-items: center; justify-content: center; font-size: 34px; flex-shrink: 0; }
+        .profile-name { font-size: 22px; font-weight: 800; }
+        .profile-rank { font-size: 14px; opacity: .65; margin-top: 2px; }
+        .profile-stats { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+        .pstat { text-align: center; }
+        .pstat-val { font-size: 20px; font-weight: 800; }
+        .pstat-lbl { font-size: 11px; opacity: .5; }
+        .prog-section { margin-bottom: 24px; animation: riseUp .4s ease .2s both; }
+        .subj-prog { margin-bottom: 18px; }
+        .subj-prog-head { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+        .diff-prog { margin-left: 12px; margin-bottom: 6px; }
+        .diff-prog-head { display: flex; justify-content: space-between; font-size: 12px; opacity: .65; margin-bottom: 3px; }
+        .inventory-grid { display: flex; flex-wrap: wrap; gap: 10px; animation: riseUp .4s ease .3s both; }
+        .inv-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 10px 16px; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="logo"><img src="gquiz-logo.png" alt="GQuiz"></div>
+    <ul class="menu">
+        <a href="homepage.html"><li title="Home"><i class="fas fa-house"></i></li></a>
+        <a href="game.html"><li title="Play"><i class="fas fa-gamepad"></i></li></a>
+        <a href="leaderboard.html"><li title="Leaderboard"><i class="fas fa-trophy"></i></li></a>
+        <a href="shop.html"><li title="Shop"><i class="fas fa-cart-shopping"></i></li></a>
+        <a href="profile.html"><li class="active" title="Profile"><i class="fas fa-user"></i></li></a>
+        <a href="notifications.html"><li title="Notifications"><i class="fas fa-bell"></i></li></a>
+        <a href="settings.html"><li title="Settings"><i class="fas fa-gear"></i></li></a>
+    </ul>
+</div>
+<div class="main">
+    <div class="page-heading">👤 Profile</div>
+
+    <div class="profile-hero" id="profileHero"></div>
+
+    <div class="page-heading" style="font-size:16px;margin-bottom:14px;">📊 Subject Progress</div>
+    <div class="prog-section card" id="progSection"></div>
+
+    <div class="page-heading" style="font-size:16px;margin:20px 0 12px;">🎒 Inventory</div>
+    <div class="inventory-grid" id="invGrid"></div>
+
+    <button class="btn btn-ghost" style="margin-top:28px;" onclick="GQ.logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
+</div>
+
+<script src="gquiz-state.js"></script>
+<script>
+    if (!GQ.requireLogin()) {}
+    var u = GQ.currentUser();
+    var SUBJECTS = ['English','Filipino','Science','Araling Panlipunan','Math'];
+    var DIFFS    = ['Easy','Medium','Hard','Extreme'];
+
+    var lb = GQ.getLeaderboard();
+    var myRank = lb.findIndex(function(x) { return x.username === u.username; }) + 1;
+    document.getElementById('profileHero').innerHTML =
+        '<div class="avatar-circle">' + (u.inventory.find(function(i){return i.startsWith('avatar')}) ? SHOP_ITEMS.find(function(i){return i.id===u.inventory.find(function(x){return x.startsWith('avatar')})})?.icon || '👤' : '👤') + '</div>' +
+        '<div><div class="profile-name">' + u.displayName + '</div><div class="profile-rank">' + u.rank + ' · Joined ' + u.joinDate + '</div>' +
+        '<div class="profile-stats">' +
+        '<div class="pstat"><div class="pstat-val">🪙 ' + u.coins + '</div><div class="pstat-lbl">Coins</div></div>' +
+        '<div class="pstat"><div class="pstat-val">✨ ' + u.xp + '</div><div class="pstat-lbl">XP</div></div>' +
+        '<div class="pstat"><div class="pstat-val">#' + (myRank || '-') + '</div><div class="pstat-lbl">Rank</div></div>' +
+        '</div></div>';
+
+    var ps = document.getElementById('progSection');
+    ps.innerHTML = '';
+    SUBJECTS.forEach(function(s) {
+        var totalDone = 0, totalAll = 40;
+        var html = '<div class="subj-prog"><div class="subj-prog-head"><span>' + s + '</span><span id="sp_' + s.replace(' ','_') + '"></span></div>';
+        DIFFS.forEach(function(d) {
+            var done = 0;
+            for (var l = 1; l <= 10; l++) {
+                var p = GQ.getProgress(s, d, l);
+                if (p && p.completed) { done++; totalDone++; }
+            }
+            html += '<div class="diff-prog"><div class="diff-prog-head"><span>' + d + '</span><span>' + done + '/10</span></div>';
+            html += '<div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:' + (done*10) + '%"></div></div></div>';
+        });
+        html += '</div>';
+        var div = document.createElement('div');
+        div.innerHTML = html;
+        ps.appendChild(div);
+        var sp = ps.querySelector('#sp_' + s.replace(' ','_'));
+        if (sp) sp.textContent = totalDone + '/' + totalAll + ' completed';
+    });
+
+    var ig = document.getElementById('invGrid');
+    if (u.inventory.length === 0) {
+        ig.innerHTML = '<div style="opacity:.4;font-size:13px;">No items yet. Visit the Shop!</div>';
+    } else {
+        u.inventory.forEach(function(id) {
+            var item = SHOP_ITEMS.find(function(i) { return i.id === id; });
+            if (item) ig.innerHTML += '<div class="inv-item">' + item.icon + ' ' + item.name + '</div>';
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GQuiz - Notifications</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="gquiz-main.css">
+    <style>
+        .notif-item { display: flex; align-items: flex-start; gap: 14px; padding: 15px 18px; border-radius: 14px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; backdrop-filter: blur(20px); transition: background .2s; animation: riseUp .3s ease both; }
+        .notif-item.unread { border-color: rgba(138,43,226,.4); background: rgba(138,43,226,.12); }
+        .notif-icon { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .notif-msg  { font-size: 13px; font-weight: 500; line-height: 1.5; }
+        .notif-time { font-size: 11px; opacity: .4; margin-top: 3px; }
+        .notif-dot  { width: 8px; height: 8px; border-radius: 50%; background: #a78bfa; flex-shrink: 0; margin-top: 6px; }
+        .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="logo"><img src="gquiz-logo.png" alt="GQuiz"></div>
+    <ul class="menu">
+        <a href="homepage.html"><li title="Home"><i class="fas fa-house"></i></li></a>
+        <a href="game.html"><li title="Play"><i class="fas fa-gamepad"></i></li></a>
+        <a href="leaderboard.html"><li title="Leaderboard"><i class="fas fa-trophy"></i></li></a>
+        <a href="shop.html"><li title="Shop"><i class="fas fa-cart-shopping"></i></li></a>
+        <a href="profile.html"><li title="Profile"><i class="fas fa-user"></i></li></a>
+        <a href="notifications.html"><li class="active" title="Notifications"><i class="fas fa-bell"></i></li></a>
+        <a href="settings.html"><li title="Settings"><i class="fas fa-gear"></i></li></a>
+    </ul>
+</div>
+<div class="main">
+    <div class="top-row">
+        <div class="page-heading" style="margin:0">🔔 Notifications</div>
+        <button class="btn btn-ghost" onclick="markAllRead()"><i class="fas fa-check-double"></i> Mark All Read</button>
+    </div>
+    <div id="notifList"></div>
+</div>
+<script src="gquiz-state.js"></script>
+<script>
+    if (!GQ.requireLogin()) {}
+    function renderNotifs() {
+        var u = GQ.currentUser();
+        var list = document.getElementById('notifList');
+        list.innerHTML = '';
+        if (!u.notifications || u.notifications.length === 0) {
+            list.innerHTML = '<div class="card" style="text-align:center;opacity:.5;padding:40px">No notifications yet!</div>';
+            return;
+        }
+        u.notifications.forEach(function(n, i) {
+            list.innerHTML +=
+                '<div class="notif-item ' + (n.read ? '' : 'unread') + '" style="animation-delay:' + (i * 0.04) + 's">' +
+                '<div class="notif-icon"><i class="fas ' + (n.icon || 'fa-bell') + '"></i></div>' +
+                '<div style="flex:1"><div class="notif-msg">' + n.msg + '</div><div class="notif-time">' + n.time + '</div></div>' +
+                (n.read ? '' : '<div class="notif-dot"></div>') + '</div>';
+        });
+    }
+    function markAllRead() {
+        GQ.markAllRead();
+        renderNotifs();
+    }
+    renderNotifs();
+</script>
+</body>
+</html>

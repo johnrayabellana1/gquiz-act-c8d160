@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GQuiz - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="gquiz-main.css">
+    <style>
+        .welcome-box {
+            background: rgba(255,255,255,0.06);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 20px rgba(0,0,0,.2);
+            padding: 28px 32px;
+            animation: riseUp .4s ease .2s both;
+        }
+        .welcome-box h1 { font-size: clamp(20px,3vw,34px); font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 20px rgba(0,0,0,.3); }
+        .welcome-box p  { font-size: 14px; opacity: .65; margin-top: 6px; }
+        .welcome-stats  { display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
+        .wstat { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); border-radius: 12px; padding: 9px 16px; font-size: 13px; display: flex; align-items: center; gap: 7px; }
+        .section-title  { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; opacity: .55; margin-bottom: 12px; padding-left: 10px; border-left: 3px solid rgba(255,255,255,.3); }
+        .subjects-grid  { display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 16px; margin-bottom: 28px; animation: riseUp .4s ease .3s both; }
+        .subj-card { padding: 24px 16px; border-radius: 18px; text-align: center; cursor: pointer; transition: transform .25s, box-shadow .25s, border-color .25s; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.2); backdrop-filter: blur(20px); }
+        .subj-card:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 12px 30px rgba(0,0,0,.35); border-color: rgba(255,255,255,.45); }
+        .subj-icon { font-size: 38px; margin-bottom: 10px; }
+        .subj-name { font-size: 14px; font-weight: 700; }
+        .subj-sub  { font-size: 11px; opacity: .5; margin-top: 3px; }
+        .recent-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 14px; animation: riseUp .4s ease .4s both; }
+        .recent-card { padding: 16px; border-radius: 14px; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.18); backdrop-filter: blur(20px); cursor: pointer; transition: background .2s; }
+        .recent-card:hover { background: rgba(255,255,255,.13); }
+        .recent-label { font-size: 11px; opacity: .5; margin-bottom: 4px; }
+        .recent-title { font-size: 14px; font-weight: 600; }
+        .recent-meta  { font-size: 12px; opacity: .5; margin-top: 4px; }
+        
+        .topbar-right { position: absolute; right: 0; display: flex; align-items: center; gap: 10px; }
+        .coin-display  { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.2); border-radius: 40px; padding: 8px 16px; font-size: 13px; font-weight: 600; backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="sidebar">
+    <div class="logo"><img src="gquiz-logo.png" alt="GQuiz"></div>
+    <ul class="menu">
+        <a href="homepage.html"><li class="active" title="Home"><i class="fas fa-house"></i></li></a>
+        <a href="bentoy-settings.HTML"><li title="Settings"><i class="fas fa-gear"></i></li></a>
+        <a href="notifications.html"><li title="Notifications"><i class="fas fa-bell"></i><span class="badge" id="notifBadge" style="display:none"></span></li></a>
+        <a href="history.html"><li title="History"><i class="fas fa-clock-rotate-left"></i></li></a>
+        <a href="shop.html"><li title="Shop"><i class="fas fa-cart-shopping"></i></li></a>
+        <a href="leaderboard.html"><li title="Leaderboard"><i class="fas fa-trophy"></i></li></a>
+        <a href="Baring-strand picking.html"><li title="Strand"><i class="fas fa-bars"></i></li></a>
+    </ul>
+</div>
+
+<div class="main">
+    <div class="topbar">
+        <div class="search-container">
+            <input type="text" placeholder="Search subjects..." class="search-input" id="searchInput" oninput="filterSubjects()">
+            <button class="search-btn"><i class="fas fa-magnifying-glass"></i></button>
+        </div>
+        <div class="topbar-right">
+            <div class="coin-display">🪙 <span id="coinCount">0</span></div>
+            <a href="profile.html" class="profile-btn"><i class="fas fa-user"></i></a>
+        </div>
+    </div>
+
+    <div class="welcome-box">
+        <h1>WELCOME TO GQUIZ 🎓</h1>
+        <p id="welcomeMsg">Loading...</p>
+        <div class="welcome-stats">
+            <div class="wstat">✨ XP: <strong id="xpStat">0</strong></div>
+            <div class="wstat">🏅 Rank: <strong id="rankStat">-</strong></div>
+            <div class="wstat">🪙 Coins: <strong id="coinStat">0</strong></div>
+        </div>
+    </div>
+
+    <div class="section-title">📚 SUBJECTS</div>
+    <div class="subjects-grid" id="subjectsGrid"></div>
+
+    <div class="section-title">🕹️ QUICK CONTINUE</div>
+    <div class="recent-grid" id="recentGrid"></div>
+</div>
+
+<script src="gquiz-state.js"></script>
+<script>
+    if (!GQ.isLoggedIn()) { window.location.href = "login.html"; }
+
+    var SUBJECTS = [
+        { key: 'English',            label: 'English',            icon: '📖' },
+        { key: 'Filipino',           label: 'Filipino',           icon: '🇵🇭' },
+        { key: 'Science',            label: 'Science',            icon: '🔬' },
+        { key: 'Araling Panlipunan', label: 'Araling Panlipunan', icon: '🗺️' },
+        { key: 'Math',               label: 'Math',               icon: '📐' },
+    ];
+    var DIFFS = ['Easy','Medium','Hard','Extreme'];
+
+    var u = GQ.currentUser();
+
+    // Topbar stats
+    document.getElementById('coinCount').textContent  = u.coins;
+    document.getElementById('coinStat').textContent   = u.coins;
+    document.getElementById('xpStat').textContent     = u.xp;
+    document.getElementById('rankStat').textContent   = u.rank;
+    document.getElementById('welcomeMsg').textContent = 'Hello, ' + u.displayName + '! Ready to quiz?';
+
+    // Notification badge
+    var unread = GQ.unreadCount();
+    if (unread > 0) {
+        var badge = document.getElementById('notifBadge');
+        badge.textContent = unread > 9 ? '9+' : unread;
+        badge.style.display = 'block';
+    }
+
+    // Build subject cards
+    var grid = document.getElementById('subjectsGrid');
+    SUBJECTS.forEach(function(s) {
+        var done = 0;
+        DIFFS.forEach(function(d) {
+            for (var l = 1; l <= 5; l++) {
+                var p = GQ.getProgress(s.key, d, l);
+                if (p && p.completed) done++;
+            }
+        });
+        var card = document.createElement('div');
+        card.className = 'subj-card';
+        card.innerHTML =
+            '<div class="subj-icon">' + s.icon + '</div>' +
+            '<div class="subj-name">' + s.label + '</div>' +
+            '<div class="subj-sub">4 difficulties · 5 levels</div>' +
+            '<div class="subj-sub">' + done + ' / 20 done</div>';
+        card.onclick = (function(sk) {
+            return function() {
+                sessionStorage.setItem('gq_subject', sk);
+                go('game.html');
+            };
+        })(s.key);
+        grid.appendChild(card);
+    });
+
+   
+    var rg = document.getElementById('recentGrid');
+    var found = 0;
+    SUBJECTS.forEach(function(s) {
+        DIFFS.forEach(function(diff) {
+            for (var l = 1; l <= 5; l++) {
+                if (found >= 6) return;
+                var p = GQ.getProgress(s.key, diff, l);
+                if (p && p.completed) {
+                    var card = document.createElement('div');
+                    card.className = 'recent-card';
+                    var stars = '';
+                    for (var st = 0; st < p.stars; st++) stars += '⭐';
+                    card.innerHTML =
+                        '<div class="recent-label">' + s.icon + ' ' + s.label + '</div>' +
+                        '<div class="recent-title">' + diff + ' — Level ' + l + '</div>' +
+                        '<div class="recent-meta">' + stars + ' Best: ' + p.score + '/5</div>';
+                    card.onclick = (function(sk, dk, lk) {
+                        return function() {
+                            sessionStorage.setItem('gq_subject', sk);
+                            sessionStorage.setItem('gq_diff', dk);
+                            sessionStorage.setItem('gq_level', String(lk));
+                            go('game.html');
+                        };
+                    })(s.key, diff, l);
+                    rg.appendChild(card);
+                    found++;
+                }
+            }
+        });
+    });
+    if (found === 0) {
+        rg.innerHTML = '<div class="recent-card" style="opacity:.5;font-size:13px;cursor:default;">Play your first quiz to see progress here!</div>';
+    }
+
+    function filterSubjects() {
+        var q = document.getElementById('searchInput').value.toLowerCase();
+        var cards = document.querySelectorAll('.subj-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].style.display = cards[i].textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+        }
+    }
+
+    function go(url) {
+        document.body.classList.add('fade-out');
+        setTimeout(function() { window.location.href = url; }, 300);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap");
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    background: url(img.png) no-repeat center/cover;
+    color: #fff;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+    width: 80px;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-right: 2px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .logo img {
+    width: 50px;
+    margin-bottom: 30px;
+}
+
+.sidebar .menu {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100%;
+    align-items: center;
+}
+
+.sidebar .menu li {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.sidebar .menu li:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar .menu li i {
+    font-size: 22px;
+    color: #fff;
+    cursor: pointer;
+}
+
+/* ── Main ── */
+.main {
+    flex: 1;
+    padding: 25px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    overflow: hidden;
+}
+
+/* ── Topbar ── */
+.topbar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+}
+
+.search-container {
+    display: flex;
+    width: 50%;
+    max-width: 600px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 40px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    align-items: center;
+    gap: 10px;
+}
+
+.profile {
+    position: absolute;
+    right: 0;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 16px;
+    color: #fff;
+    font-family: "Poppins", sans-serif;
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+}
+
+.profile {
+    position: absolute;
+    right: 0;
+    width: 50px;
+    height: 50px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.profile:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Welcome Box ── */
+.welcome-box {
+    flex: 1;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    text-align: center;
+}
+
+.welcome-box h1 {
+    font-size: clamp(28px, 4vw, 52px);
+    color: #fff;
+    font-weight: 700;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1px;
+}
+
+
+.welcome-box .actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.welcome-box .actions .btn {
+    height: 50px;
+    padding: 0 40px;
+    background: #fff;
+    border-radius: 40px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    font-size: 16px;
+    font-family: "Poppins", sans-serif;
+    color: #333;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.welcome-box .actions .btn:hover {
+    color: blueviolet;
+}

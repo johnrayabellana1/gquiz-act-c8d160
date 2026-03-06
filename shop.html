@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GQuiz - Shop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="gquiz-main.css">
+    <style>
+        .coin-banner {
+            background: linear-gradient(135deg,rgba(234,179,8,.35),rgba(251,146,60,.25));
+            border: 1px solid rgba(234,179,8,.4);
+            border-radius: 20px; padding: 22px 28px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 28px; animation: riseUp .4s ease .1s both; flex-wrap: wrap; gap: 12px;
+        }
+        .coin-banner h2 { font-size: 20px; font-weight: 800; }
+        .coin-banner p  { font-size: 13px; opacity: .6; margin-top: 2px; }
+        .big-coin { font-size: 38px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+        .tab-btn { padding: 7px 18px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.07); color: rgba(255,255,255,.6); font-size: 12px; font-weight: 600; cursor: pointer; backdrop-filter: blur(20px); transition: all .2s; font-family: "Poppins",sans-serif; }
+        .tab-btn.active, .tab-btn:hover { background: rgba(138,43,226,.35); border-color: rgba(138,43,226,.6); color: #fff; }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 16px; animation: riseUp .4s ease .2s both; }
+        .shop-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.2); border-radius: 18px; backdrop-filter: blur(20px); padding: 22px 16px; text-align: center; cursor: pointer; transition: transform .25s, box-shadow .25s; position: relative; }
+        .shop-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,.3); }
+        .shop-card.owned { border-color: rgba(34,197,94,.5); background: rgba(34,197,94,.08); }
+        .shop-icon  { font-size: 42px; margin-bottom: 10px; }
+        .shop-name  { font-size: 14px; font-weight: 700; }
+        .shop-desc  { font-size: 11px; opacity: .5; margin: 4px 0 12px; }
+        .shop-price { font-size: 15px; font-weight: 800; color: #fbbf24; }
+        .shop-price.owned-lbl { color: #4ade80; font-size: 13px; }
+        .buy-btn { margin-top: 10px; width: 100%; padding: 8px; border: none; border-radius: 20px; background: #fff; color: #333; font-size: 12px; font-weight: 700; cursor: pointer; font-family: "Poppins",sans-serif; transition: color .2s; }
+        .buy-btn:hover { color: blueviolet; }
+        .buy-btn:disabled { opacity: .4; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="sidebar">
+    <div class="logo"><img src="gquiz-logo.png" alt="GQuiz"></div>
+    <ul class="menu">
+        <a href="homepage.html"><li title="Home"><i class="fas fa-house"></i></li></a>
+        <a href="game.html"><li title="Play"><i class="fas fa-gamepad"></i></li></a>
+        <a href="leaderboard.html"><li title="Leaderboard"><i class="fas fa-trophy"></i></li></a>
+        <a href="shop.html"><li class="active" title="Shop"><i class="fas fa-cart-shopping"></i></li></a>
+        <a href="profile.html"><li title="Profile"><i class="fas fa-user"></i></li></a>
+        <a href="notifications.html"><li title="Notifications"><i class="fas fa-bell"></i></li></a>
+        <a href="settings.html"><li title="Settings"><i class="fas fa-gear"></i></li></a>
+    </ul>
+</div>
+<div class="main">
+    <div class="page-heading">🛒 Shop</div>
+    <div class="coin-banner">
+        <div>
+            <h2>Your Balance</h2>
+            <p>Earn coins by completing quizzes!</p>
+        </div>
+        <div class="big-coin">🪙 <span id="coinDisplay">0</span></div>
+    </div>
+    <div class="filter-tabs">
+        <button class="tab-btn active" onclick="filterShop('all', this)">All</button>
+        <button class="tab-btn" onclick="filterShop('power', this)">⚡ Power-Ups</button>
+        <button class="tab-btn" onclick="filterShop('avatar', this)">🎭 Avatars</button>
+        <button class="tab-btn" onclick="filterShop('theme', this)">🎨 Themes</button>
+    </div>
+    <div class="shop-grid" id="shopGrid"></div>
+</div>
+<script src="gquiz-state.js"></script>
+<script>
+    if (!GQ.requireLogin()) {}
+    var u = GQ.currentUser();
+    var activeCategory = 'all';
+    document.getElementById('coinDisplay').textContent = u.coins;
+
+    function renderShop(category) {
+        var grid = document.getElementById('shopGrid');
+        grid.innerHTML = '';
+        var items = []; for (var _i=0;_i<SHOP_ITEMS.length;_i++){if(category==='all'||SHOP_ITEMS[_i].category===category)items.push(SHOP_ITEMS[_i]);}
+        items.forEach(function(item) {
+            var owned = u.inventory.indexOf(item.id) !== -1;
+            var canAfford = u.coins >= item.price;
+            var card = document.createElement('div');
+            card.className = 'shop-card' + (owned ? ' owned' : '');
+            card.innerHTML =
+                '<div class="shop-icon">' + item.icon + '</div>' +
+                '<div class="shop-name">' + item.name + '</div>' +
+                '<div class="shop-desc">' + item.desc + '</div>' +
+                '<div class="shop-price ' + (owned ? 'owned-lbl' : '') + '">' + (owned ? '✅ Owned' : '🪙 ' + item.price) + '</div>' +
+                '<button class="buy-btn" ' + (owned || !canAfford ? 'disabled' : '') + ' onclick="buyItem(\'' + item.id + '\')">' +
+                (owned ? 'Owned' : canAfford ? 'Buy Now' : 'Need ' + (item.price - u.coins) + ' more') + '</button>';
+            grid.appendChild(card);
+        });
+    }
+
+    function filterShop(cat, btn) {
+        activeCategory = cat;
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        renderShop(cat);
+    }
+
+    function buyItem(id) {
+        var res = GQ.buyItem(id);
+        u = GQ.currentUser();
+        document.getElementById('coinDisplay').textContent = u.coins;
+        if (res.ok) {
+            showToast('🛍️ Purchased! Check your profile.', 'success');
+        } else {
+            showToast('⚠️ ' + res.msg, 'warn');
+        }
+        renderShop(activeCategory);
+    }
+
+    function showToast(msg, type) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast show ' + (type || '');
+        clearTimeout(t._t);
+        t._t = setTimeout(function() { t.className = 'toast'; }, 2600);
+    }
+
+    renderShop('all');
+</script>
+</body>
+</html>
